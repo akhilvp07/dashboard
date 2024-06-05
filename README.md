@@ -4,12 +4,12 @@ Dashboard to show ping status for configured devices. To be run from Fedora 20.
 ## Steps
 1. Make sure that the dashboard server is running:
 ```sh
-    start_dashboard
+start_dashboard
 ```
 
 2. Make sure that the pingstatus sccript is running:
 ```sh
-    run_pingstatus
+run_pingstatus
 ```
 
 3. Go to browser and enter URL: [192.168.0.151:8000](http://192.168.0.151:8000/)
