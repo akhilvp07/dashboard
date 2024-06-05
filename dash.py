@@ -54,7 +54,11 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
 
             status_color = 'green' if device['lan_status'] == 'Up' else 'red'
             content += "<td class='col3 status' style='color: {}'><b>{}</b></td>".format(status_color, device['lan_status'])
-            content += "<td class='col4'>{}</td>".format(device['wan_ip'])
+            # Wrap WAN IP in a hyperlink with target='_blank'
+            wan_ip = device['wan_ip']
+            wan_ip_link = "http://{}".format(wan_ip)
+            content += "<td class='col4'><a href='{0}' target='_blank'>{1}</a></td>".format(wan_ip_link, wan_ip)
+
 
             if device['wan_status'] == 'NA':
                 status_color = 'black'  # Or any color for 'NA' status
