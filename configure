@@ -1,0 +1,29 @@
+#!/bin/sh
+
+BIN_FILE_PATH="./others/bin"
+BIN_PATH=~/bin/
+CFG_FILE_PATH="others/config"
+CFG_PATH="$HOME/.config/pingstatus/"
+
+# Check if BIN_FILE_PATH directory exists and is not empty
+if [ -d "$BIN_FILE_PATH" ] && [ "$(ls -A $BIN_FILE_PATH)" ]; then
+    cp $BIN_FILE_PATH/* $BIN_PATH
+else
+    echo "Directory $BIN_FILE_PATH does not exist or is empty"
+    exit 1
+fi
+
+cp "$CFG_FILE_PATH/devices.conf" "$CFG_PATH"
+
+echo "Config done successfully"
+
+echo "Starting services"
+
+#start dashboard
+start_dashboard
+
+#run pingstatus
+run_pingstatus
+
+echo "Services started successfully"
+
