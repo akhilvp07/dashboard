@@ -129,7 +129,7 @@ delete_device() {
         # Remove the device entry from the configuration file
         sed -i "/^$lan_ip,/d" "$CONFIG_FILE"
             # Check if the device exists in the status file
-            grep -q "^$lan_ip," "$STATUS_FILE"
+            grep -q "^$lan_ip:" "$STATUS_FILE"
             if [ $? -eq 0 ]; then
                 # Remove the device entry from the status file
                 sed -i "/^$lan_ip,/d" "$STATUS_FILE"
