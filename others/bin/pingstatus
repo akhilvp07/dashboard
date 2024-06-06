@@ -132,7 +132,7 @@ delete_device() {
             grep -q "^$lan_ip:" "$STATUS_FILE"
             if [ $? -eq 0 ]; then
                 # Remove the device entry from the status file
-                sed -i "/^$lan_ip,/d" "$STATUS_FILE"
+                sed -i "/^$lan_ip:/d" "$STATUS_FILE"
             fi
         echo "Device deleted successfully."
     else
