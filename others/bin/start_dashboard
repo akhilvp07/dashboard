@@ -2,17 +2,21 @@
 
 process_name="/home/akhil/dashboard/dash.py"
 
+#Function to run the dashboard process
+run_dash() {
+    nohup python3 "$process_name" 2>/dev/null &    
+}
 # Kill any existing processes with the specified name (optional redirection removed)
 kill -TERM $(pgrep -f "$process_name") 2>/dev/null
 
-nohup python3 "$process_name" 2>/dev/null &
+run_dash
 sleep 1
 echo $(pgrep -f "$process_name")
 
 while [[ "" == $(pgrep -f "$process_name") ]]; do
     echo "Error starting dashboard server. Retrying..."
     # Start the script and capture its exit status
-    nohup python3 "$process_name" 2>/dev/null &
+    run_dash
     sleep 10
 done
 
