@@ -144,6 +144,7 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
     def do_HEAD(self):
         self.send_response(200)
         self.end_headers()
+        self.finish() # Close the connection after handling the request
 
 # Set the IP address and port
 IP = "192.168.0.151"
