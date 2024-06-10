@@ -118,8 +118,20 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
         content += ".status { color: black; text-align: center;}"  # Style for status class
         content += "</style>"
         content += "</head><body>"
-        content += '<button onclick="location.href=\'/refresh\'" type="button">Refresh</button>'
+        content += '<button onclick="refreshData()" type="button">Refresh</button>'
         content += self.render_dashboard()
+        content += """
+        <script>
+        function refreshData() {
+            fetch('/refresh')
+            .then(response => response.text())
+            .then(data => {
+                // Replace the body of the page with the new data
+                document.body.innerHTML = data;
+            });
+        }
+        </script>
+        """
         content += "</body></html>"
         return content
 
