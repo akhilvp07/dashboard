@@ -70,8 +70,11 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
             content += "<td class='col3 status' style='color: {}'><b>{}</b></td>".format(status_color, device['lan_status'])
             # Wrap WAN IP in a hyperlink with target='_blank'
             wan_ip = device['wan_ip']
-            wan_ip_link = "http://{}".format(wan_ip)
-            content += "<td class='col4'><a href='{0}' target='_blank'>{1}</a></td>".format(wan_ip_link, wan_ip)
+            if wan_ip != "NA":
+                wan_ip_link = "http://{}".format(wan_ip)
+                content += "<td class='col4'><a href='{0}' target='_blank'>{1}</a></td>".format(wan_ip_link, wan_ip)
+            else:
+                content += "<td class='col4'>{}</td>".format(wan_ip)
 
 
             if device['wan_status'] == 'NA':
