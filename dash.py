@@ -21,12 +21,14 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
             self.end_headers()
             content = self.get_dashboard_content()
             self.wfile.write(content.encode('utf-8'))
+            self.finish()  # Close the connection after handling the request
         else:
             self.send_response(200)
             self.send_header('Content-type', 'text/html')
             self.end_headers()
             content = self.get_dashboard_content()
             self.wfile.write(content.encode('utf-8'))
+            self.finish()  # Close the connection after handling the request
 
     def read_device_status(self):
         # Check if cache is still valid
