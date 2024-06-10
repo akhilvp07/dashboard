@@ -106,7 +106,7 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
 
     def get_dashboard_content(self):
         content = "<html><head><title>Dashboard</title>"
-        content += "<meta http-equiv='refresh' content='5'>"  # Refresh every 5 seconds
+        #content += "<meta http-equiv='refresh' content='5'>"  # Refresh every 5 seconds
         # Add CSS styles for the table with dynamic column widths
         content += "<style>"
         content += "table { width: 50%; border-collapse: collapse; }"
@@ -133,6 +133,33 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
                 document.body.innerHTML = data;
             });
         }
+        </script>
+        """
+        content += """
+        <script>
+        function fetchPeriodicData() {
+            fetch('/')
+            .then(response => response.text())
+            .then(data => {
+                // Replace only the content of the table with the new data
+                var table = document.querySelector('.device-table');
+                table.innerHTML = getTableRows(data);
+            });
+        }
+
+        function getTableRows(data) {
+            // Parse the HTML string to extract the table rows
+            var parser = new DOMParser();
+            var doc = parser.parseFromString(data, 'text/html');
+            var newTable = doc.querySelector('.device-table').innerHTML;
+            return newTable;
+        }
+
+        // Fetch data every 5 seconds
+        setInterval(fetchPeriodicData, 5000);
+
+        // Initial data fetch
+        fetchPeriodicData();
         </script>
         """
         content += "</body></html>"
