@@ -6,16 +6,24 @@ import subprocess
 
 STATUS_FILE="/home/akhil/.config/pingstatus/device_status.conf"
 
-class DashboardHandler(http.server.SimpleHTTPRequestHandler):
-    CACHE_EXPIRY = 5    # Cache expiry time in seconds (5 seconds)
-    last_read = 0       # The last time the status file was read
-    devices_cache = []    #Cache for the device status
+class DashboardHandler(http.server.BaseHTTPRequestHandler):
+    CACHE_EXPIRY = 5  # Cache expiry time in seconds (5 seconds)
+    last_read = 0  # The last time the status file was read
+    devices_cache = []  # Cache for the device status
 
     def do_GET(self):
-        # Set the directory to serve files from
-        self.directory = "./"
-        # Call the parent class's do_GET method
-        return http.server.SimpleHTTPRequestHandler.do_GET(self)
+        if self.path == '/refresh':
+            # Execute the bash command when the 'refresh' button is clicked
+            subprocess.run(['~/bin/pingstatus', '--sync'], shell=True)
+            self.send_response(200)
+            self.end_headers()
+            content = self.get_dashboard_content()
+            self.wfile.write(content.encode('utf-8'))
+        else:
+            self.send_response(200)
+            self.end_headers()
+            content = self.get_dashboard_content()
+            self.wfile.write(content.encode('utf-8'))
 
     def read_device_status(self):
         # Check if cache is still valid
@@ -45,6 +53,7 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
         self.last_read = time.time()
 
         return devices
+
     def render_dashboard(self):
         content = "<h1>Device Status</h1>"
         content += "<table border='1' class='device-table'>"  # Add class to the table
@@ -77,7 +86,6 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
             else:
                 content += "<td class='col4'>{}</td>".format(wan_ip)
 
-
             if device['wan_status'] == 'NA':
                 status_color = 'black'  # Or any color for 'NA' status
                 content += "<td class='col5 status' style='color: {}'>{}</td>".format(status_color, device['wan_status'])
@@ -89,7 +97,6 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
 
         content += "</table>"
         return content
-
 
     def get_dashboard_content(self):
         content = "<html><head><title>Dashboard</title>"
@@ -113,29 +120,13 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
         content += "</body></html>"
         return content
 
-
-
     def end_headers(self):
         self.send_header('Content-type', 'text/html')
-        http.server.SimpleHTTPRequestHandler.end_headers(self)
+        http.server.BaseHTTPRequestHandler.end_headers(self)
 
     def do_HEAD(self):
         self.send_response(200)
         self.end_headers()
-
-    def do_GET(self):
-        if self.path == '/refresh':
-            # Execute the bash command when the 'refresh' button is clicked
-            subprocess.run(['~/bin/pingstatus', '--sync'], shell=True)
-            self.send_response(200)
-            self.end_headers()
-            content = self.get_dashboard_content()
-            self.wfile.write(content.encode('utf-8'))
-        else:
-            self.send_response(200)
-            self.end_headers()
-            content = self.get_dashboard_content()
-            self.wfile.write(content.encode('utf-8'))
 
 # Set the IP address and port
 IP = "192.168.0.151"
