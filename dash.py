@@ -1,17 +1,27 @@
 import http.server
 import socketserver
 import os
+import time
 
 STATUS_FILE="/home/akhil/.config/pingstatus/device_status.conf"
 
 class DashboardHandler(http.server.SimpleHTTPRequestHandler):
+    CACHE_EXPIRY = 5    # Cache expiry time in seconds (5 seconds)
+    last_read = 0       # The last time the status file was read
+    devices_cache []    #Cache for the device status
+
     def do_GET(self):
         # Set the directory to serve files from
         self.directory = "./"
         # Call the parent class's do_GET method
         return http.server.SimpleHTTPRequestHandler.do_GET(self)
 
-    def read_device_status(self):  # Add 'self' as the first argument
+    def read_device_status(self):
+        # Check if cache is still valid
+        if time.time() - self.last_read < self.CACHE_EXPIRY:
+            return self.devices_cache
+
+        # If the cache is expired, read the status file and update the cache
         devices = []
         with open(STATUS_FILE, 'r') as file:
             for line in file:
@@ -29,6 +39,10 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                     })
                 else:
                     print("Invalid line:", line)
+        # Update the cache and last read time
+        self.devices_cache = devices
+        self.last_read = time.time()
+
         return devices
     def render_dashboard(self):
         content = "<h1>Device Status</h1>"
