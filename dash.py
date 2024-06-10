@@ -4,7 +4,7 @@ import os
 import time
 import subprocess
 
-STATUS_FILE="/home/akhil/.config/pingstatus/device_status.conf"
+STATUS_FILE = "/home/akhil/.config/pingstatus/device_status.conf"
 
 class DashboardHandler(http.server.BaseHTTPRequestHandler):
     CACHE_EXPIRY = 5  # Cache expiry time in seconds (5 seconds)
@@ -14,13 +14,16 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == '/refresh':
             # Execute the bash command when the 'refresh' button is clicked
+            print("Refresh button clicked, running sync command.")
             subprocess.run(['~/bin/pingstatus', '--sync'], shell=True)
             self.send_response(200)
+            self.send_header('Content-type', 'text/html')
             self.end_headers()
             content = self.get_dashboard_content()
             self.wfile.write(content.encode('utf-8'))
         else:
             self.send_response(200)
+            self.send_header('Content-type', 'text/html')
             self.end_headers()
             content = self.get_dashboard_content()
             self.wfile.write(content.encode('utf-8'))
