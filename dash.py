@@ -15,7 +15,7 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
         if self.path == '/refresh':
             # Execute the bash command when the 'refresh' button is clicked
             print("Refresh button clicked, running sync command.")
-            subprocess.call(['~/bin/pingstatus', '--sync'])
+            subprocess.call(['pingstatus', '--sync'])
             self.send_response(200)
             self.send_header('Content-type', 'text/html')
             self.end_headers()
