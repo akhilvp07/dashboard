@@ -8,7 +8,7 @@ STATUS_FILE="/home/akhil/.config/pingstatus/device_status.conf"
 class DashboardHandler(http.server.SimpleHTTPRequestHandler):
     CACHE_EXPIRY = 5    # Cache expiry time in seconds (5 seconds)
     last_read = 0       # The last time the status file was read
-    devices_cache []    #Cache for the device status
+    devices_cache = []    #Cache for the device status
 
     def do_GET(self):
         # Set the directory to serve files from
