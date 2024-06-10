@@ -138,7 +138,8 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
         content += """
         <script>
         function fetchPeriodicData() {
-            fetch('/')
+            var url = '/?timestamp=' + new Date().getTime(); // Add cache-busting parameter
+            fetch(url)
             .then(response => response.text())
             .then(data => {
                 // Replace only the content of the table with the new data
