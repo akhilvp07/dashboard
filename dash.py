@@ -3,6 +3,7 @@ import socketserver
 import os
 import time
 import subprocess
+import socket
 
 STATUS_FILE = "/home/akhil/.config/pingstatus/device_status.conf"
 
@@ -150,8 +151,9 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
 IP = "192.168.0.151"
 PORT = 8000
 
-# Create a TCP server
+# Create a TCP server with SO_REUSEADDR option
 httpd = socketserver.TCPServer((IP, PORT), DashboardHandler)
+httpd.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
 print("Dashboard server is running at http://{}:{}".format(IP, PORT))
 
