@@ -2,6 +2,7 @@ import http.server
 import socketserver
 import os
 import time
+import subprocess
 
 STATUS_FILE="/home/akhil/.config/pingstatus/device_status.conf"
 
@@ -107,6 +108,7 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
         content += ".status { color: black; text-align: center;}"  # Style for status class
         content += "</style>"
         content += "</head><body>"
+        content += '<button onclick="location.href=\'/refresh\'" type="button">Refresh</button>'
         content += self.render_dashboard()
         content += "</body></html>"
         return content
@@ -122,10 +124,18 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
-        self.send_response(200)
-        self.end_headers()
-        content = self.get_dashboard_content()
-        self.wfile.write(content.encode('utf-8'))
+        if self.path == '/refresh':
+            # Execute the bash command when the 'refresh' button is clicked
+            subprocess.run(['~/bin/pingstatus', '--sync'], shell=True)
+            self.send_response(200)
+            self.end_headers()
+            content = self.get_dashboard_content()
+            self.wfile.write(content.encode('utf-8'))
+        else:
+            self.send_response(200)
+            self.end_headers()
+            content = self.get_dashboard_content()
+            self.wfile.write(content.encode('utf-8'))
 
 # Set the IP address and port
 IP = "192.168.0.151"
