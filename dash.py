@@ -15,7 +15,7 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == '/refresh':
             try:
-                    print("Refresh endpoint hit")
+                print("Refresh endpoint hit")
                 subprocess.call(['pingstatus', '--sync'])
                 print("Command executed successfully")
                 self.send_response(200)
