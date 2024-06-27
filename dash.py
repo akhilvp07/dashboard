@@ -135,7 +135,7 @@ PORT = 8000
 httpd = socketserver.TCPServer((IP, PORT), DashboardHandler)
 httpd.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
-print(f"Dashboard server is running at http://{IP}:{PORT}")
+print("Dashboard server is running at http://{}:{}".format(IP, PORT))
 
 try:
     httpd.serve_forever()
