@@ -50,75 +50,73 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
 
     def get_dashboard_content(self):
         devices = self.read_device_status()
-        content = """
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Device Dashboard</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.0/css/bootstrap.min.css">
-    <style>
-        body { padding: 20px; }
-        .device-table th, .device-table td { text-align: center; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Device Dashboard</h1>
-        <button class="btn btn-primary" onclick="refreshDashboard()">Refresh</button>
-        <table class="table table-bordered device-table mt-3">
-            <thead>
-                <tr>
-                    <th>LAN IP</th>
-                    <th>LAN Status</th>
-                    <th>WAN IP</th>
-                    <th>WAN Status</th>
-                    <th>Device Name</th>
-                </tr>
-            </thead>
-            <tbody>
-        """
+        content = (
+            "<!DOCTYPE html>"
+            "<html>"
+            "<head>"
+            "<meta charset=\"UTF-8\">"
+            "<title>Device Dashboard</title>"
+            "<link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.0/css/bootstrap.min.css\">"
+            "<style>"
+            "body { padding: 20px; }"
+            ".device-table th, .device-table td { text-align: center; }"
+            "</style>"
+            "</head>"
+            "<body>"
+            "<div class=\"container\">"
+            "<h1>Device Dashboard</h1>"
+            "<button class=\"btn btn-primary\" onclick=\"refreshDashboard()\">Refresh</button>"
+            "<table class=\"table table-bordered device-table mt-3\">"
+            "<thead>"
+            "<tr>"
+            "<th>LAN IP</th>"
+            "<th>LAN Status</th>"
+            "<th>WAN IP</th>"
+            "<th>WAN Status</th>"
+            "<th>Device Name</th>"
+            "</tr>"
+            "</thead>"
+            "<tbody>"
+        )
         for device in devices:
-            content += f"""
-                <tr>
-                    <td>{device[0]}</td>
-                    <td>{device[1]}</td>
-                    <td>{device[2]}</td>
-                    <td>{device[3]}</td>
-                    <td>{device[4]}</td>
-                </tr>
-            """
-        content += """
-            </tbody>
-        </table>
-    </div>
-    <script>
-        function refreshDashboard() {
-            fetch('/refresh')
-            .then(response => response.text())
-            .then(data => {
-                document.body.innerHTML = data;
-            });
-        }
-
-        function fetchPeriodicData() {
-            var url = '/?timestamp=' + new Date().getTime(); // Add cache-busting parameter
-            fetch(url)
-            .then(response => response.text())
-            .then(data => {
-                var parser = new DOMParser();
-                var doc = parser.parseFromString(data, 'text/html');
-                var newTable = doc.querySelector('.device-table tbody').innerHTML;
-                document.querySelector('.device-table tbody').innerHTML = newTable;
-            });
-        }
-
-        setInterval(fetchPeriodicData, 5000);
-        fetchPeriodicData();
-    </script>
-</body>
-</html>
-        """
+            content += (
+                "<tr>"
+                f"<td>{device[0]}</td>"
+                f"<td>{device[1]}</td>"
+                f"<td>{device[2]}</td>"
+                f"<td>{device[3]}</td>"
+                f"<td>{device[4]}</td>"
+                "</tr>"
+            )
+        content += (
+            "</tbody>"
+            "</table>"
+            "</div>"
+            "<script>"
+            "function refreshDashboard() {"
+            "fetch('/refresh')"
+            ".then(response => response.text())"
+            ".then(data => {"
+            "document.body.innerHTML = data;"
+            "});"
+            "}"
+            "function fetchPeriodicData() {"
+            "var url = '/?timestamp=' + new Date().getTime(); // Add cache-busting parameter"
+            "fetch(url)"
+            ".then(response => response.text())"
+            ".then(data => {"
+            "var parser = new DOMParser();"
+            "var doc = parser.parseFromString(data, 'text/html');"
+            "var newTable = doc.querySelector('.device-table tbody').innerHTML;"
+            "document.querySelector('.device-table tbody').innerHTML = newTable;"
+            "});"
+            "}"
+            "setInterval(fetchPeriodicData, 5000);"
+            "fetchPeriodicData();"
+            "</script>"
+            "</body>"
+            "</html>"
+        )
         return content
 
     def end_headers(self):
