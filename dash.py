@@ -14,11 +14,8 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
 
     def do_GET(self):
         if self.path == '/refresh':
-            # Log to confirm that the refresh path is being hit
-            print("Refresh endpoint hit")
-            # Execute the bash command when the 'refresh' button is clicked
             try:
-                print("Running sync command: pingstatus --sync")
+                    print("Refresh endpoint hit")
                 subprocess.call(['pingstatus', '--sync'])
                 print("Command executed successfully")
                 self.send_response(200)
@@ -26,8 +23,12 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
                 self.end_headers()
                 content = self.get_dashboard_content()
                 self.wfile.write(content.encode('utf-8'))
+            except subprocess.CalledProcessError as e:
+                print("Error executing command (CalledProcessError):", e)
+                self.send_response(500)
+                self.end_headers()
             except Exception as e:
-                print("Error executing command: {}".format(e))
+                print("Error executing command:", e)
                 self.send_response(500)
                 self.end_headers()
         else:
