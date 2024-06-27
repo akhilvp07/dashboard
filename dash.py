@@ -60,6 +60,8 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
             "<style>"
             "body { padding: 20px; }"
             ".device-table th, .device-table td { text-align: center; }"
+            ".status-up { color: green; font-weight: bold; }"
+            ".status-down { color: red; font-weight: bold; }"
             "</style>"
             "</head>"
             "<body>"
@@ -79,15 +81,17 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
             "<tbody>"
         )
         for device in devices:
+            lan_status_class = "status-up" if device[1].lower() == "up" else "status-down" if device[1].lower() == "down" else ""
+            wan_status_class = "status-up" if device[3].lower() == "up" else "status-down" if device[3].lower() == "down" else ""
             content += (
                 "<tr>"
                 "<td>{}</td>"
+                "<td class=\"{}\">{}</td>"
                 "<td>{}</td>"
-                "<td>{}</td>"
-                "<td>{}</td>"
+                "<td class=\"{}\">{}</td>"
                 "<td>{}</td>"
                 "</tr>"
-            ).format(device[0], device[1], device[2], device[3], device[4])
+            ).format(device[0], lan_status_class, device[1], device[2], wan_status_class, device[3], device[4])
         content += (
             "</tbody>"
             "</table>"
