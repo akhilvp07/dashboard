@@ -81,13 +81,13 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
         for device in devices:
             content += (
                 "<tr>"
-                f"<td>{device[0]}</td>"
-                f"<td>{device[1]}</td>"
-                f"<td>{device[2]}</td>"
-                f"<td>{device[3]}</td>"
-                f"<td>{device[4]}</td>"
+                "<td>{}</td>"
+                "<td>{}</td>"
+                "<td>{}</td>"
+                "<td>{}</td>"
+                "<td>{}</td>"
                 "</tr>"
-            )
+            ).format(device[0], device[1], device[2], device[3], device[4])
         content += (
             "</tbody>"
             "</table>"
