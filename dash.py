@@ -14,8 +14,10 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
 
     def do_GET(self):
         if self.path == '/refresh':
+            # Log to confirm that the refresh path is being hit
+            print("Refresh endpoint hit")
             # Execute the bash command when the 'refresh' button is clicked
-            print("Refresh button clicked, running sync command.")
+            print("Running sync command: pingstatus --sync")
             subprocess.call(['pingstatus', '--sync'])
             self.send_response(200)
             self.send_header('Content-type', 'text/html')
@@ -101,7 +103,10 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
             "fetch('/refresh')"
             ".then(response => response.text())"
             ".then(data => {"
-            "document.body.innerHTML = data;"
+            "var parser = new DOMParser();"
+            "var doc = parser.parseFromString(data, 'text/html');"
+            "var newTable = doc.querySelector('.device-table tbody').innerHTML;"
+            "document.querySelector('.device-table tbody').innerHTML = newTable;"
             "});"
             "}"
             "function fetchPeriodicData() {"
