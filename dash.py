@@ -27,7 +27,7 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
                 content = self.get_dashboard_content()
                 self.wfile.write(content.encode('utf-8'))
             except Exception as e:
-                print(f"Error executing command: {e}")
+                print("Error executing command: {}".format(e))
                 self.send_response(500)
                 self.end_headers()
         else:
