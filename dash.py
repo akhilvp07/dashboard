@@ -17,13 +17,19 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
             # Log to confirm that the refresh path is being hit
             print("Refresh endpoint hit")
             # Execute the bash command when the 'refresh' button is clicked
-            print("Running sync command: pingstatus --sync")
-            subprocess.call(['pingstatus', '--sync'])
-            self.send_response(200)
-            self.send_header('Content-type', 'text/html')
-            self.end_headers()
-            content = self.get_dashboard_content()
-            self.wfile.write(content.encode('utf-8'))
+            try:
+                print("Running sync command: pingstatus --sync")
+                subprocess.call(['pingstatus', '--sync'])
+                print("Command executed successfully")
+                self.send_response(200)
+                self.send_header('Content-type', 'text/html')
+                self.end_headers()
+                content = self.get_dashboard_content()
+                self.wfile.write(content.encode('utf-8'))
+            except Exception as e:
+                print(f"Error executing command: {e}")
+                self.send_response(500)
+                self.end_headers()
         else:
             self.send_response(200)
             self.send_header('Content-type', 'text/html')
@@ -101,12 +107,21 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
             "<script>"
             "function refreshDashboard() {"
             "fetch('/refresh')"
-            ".then(response => response.text())"
+            ".then(response => {"
+            "if (!response.ok) {"
+            "throw new Error('Network response was not ok');"
+            "}"
+            "return response.text();"
+            "})"
             ".then(data => {"
             "var parser = new DOMParser();"
             "var doc = parser.parseFromString(data, 'text/html');"
             "var newTable = doc.querySelector('.device-table tbody').innerHTML;"
             "document.querySelector('.device-table tbody').innerHTML = newTable;"
+            "console.log('Dashboard refreshed successfully');"
+            "})"
+            ".catch(error => {"
+            "console.error('There has been a problem with your fetch operation:', error);"
             "});"
             "}"
             "function fetchPeriodicData() {"
