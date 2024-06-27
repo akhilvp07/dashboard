@@ -140,9 +140,7 @@ httpd.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 print(f"Dashboard server is running at http://{IP}:{PORT}")
 
 try:
-    # Start serving
     httpd.serve_forever()
 except KeyboardInterrupt:
-    # Stop serving when Ctrl+C is pressed
     httpd.shutdown()
     print("\nServer stopped.")
