@@ -65,6 +65,7 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
             "<head>"
             "<meta charset=\"UTF-8\">"
             "<title>Device Dashboard</title>"
+            "<link rel=\"icon\" href=\"/themes/custom/ribbon/images/favicon.ico\" type=\"image/vnd.microsoft.icon\">"
             "<link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.0/css/bootstrap.min.css\">"
             "<style>"
             "body { padding: 20px; }"
