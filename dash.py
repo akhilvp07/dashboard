@@ -3,6 +3,7 @@ import socketserver
 import os
 import time
 import subprocess
+import socket
 
 STATUS_FILE = "/home/akhil/.config/pingstatus/device_status.conf"
 
@@ -13,14 +14,23 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
 
     def do_GET(self):
         if self.path == '/refresh':
-            # Execute the bash command when the 'refresh' button is clicked
-            print("Refresh button clicked, running sync command.")
-            subprocess.call(['pingstatus', '--sync'])
-            self.send_response(200)
-            self.send_header('Content-type', 'text/html')
-            self.end_headers()
-            content = self.get_dashboard_content()
-            self.wfile.write(content.encode('utf-8'))
+            try:
+                print("Refresh endpoint hit")
+                subprocess.call(['pingstatus', '--sync'])
+                print("Command executed successfully")
+                self.send_response(200)
+                self.send_header('Content-type', 'text/html')
+                self.end_headers()
+                content = self.get_dashboard_content()
+                self.wfile.write(content.encode('utf-8'))
+            except subprocess.CalledProcessError as e:
+                print("Error executing command (CalledProcessError):", e)
+                self.send_response(500)
+                self.end_headers()
+            except Exception as e:
+                print("Error executing command:", e)
+                self.send_response(500)
+                self.end_headers()
         else:
             self.send_response(200)
             self.send_header('Content-type', 'text/html')
@@ -42,97 +52,106 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
                     lan_info, wan_info, device_name = parts
                     lan_ip, lan_status = lan_info.split(':') + [""] * (2 - len(lan_info.split(':')))
                     wan_ip, wan_status = wan_info.split(':') + [""] * (2 - len(wan_info.split(':')))
-                    devices.append({
-                        'device_name': device_name,
-                        'lan_ip': lan_ip,
-                        'lan_status': lan_status,
-                        'wan_ip': wan_ip,
-                        'wan_status': wan_status
-                    })
-                else:
-                    print("Invalid line:", line)
-        # Update the cache and last read time
+                    devices.append((lan_ip, lan_status, wan_ip, wan_status, device_name))
         self.devices_cache = devices
         self.last_read = time.time()
-
         return devices
 
-    def render_dashboard(self):
-        content = "<h1>Device Status</h1>"
-        content += "<table border='1' class='device-table'>"  # Add class to the table
-        content += "<tr>"
-        content += "<th class='col1'>Device Name</th>"  # Assign class to header cells
-        content += "<th class='col2'>LAN IP</th>"
-        content += "<th class='col3'>LAN Status</th>"
-        content += "<th class='col4'>WAN IP</th>"
-        content += "<th class='col5'>WAN Status</th>"
-        content += "</tr>"
-
-        devices = self.read_device_status()
-
-        for device in devices:
-            content += "<tr>"
-            content += "<td class='col1'>{}</td>".format(device['device_name'])
-
-            # Wrap LAN IP in a hyperlink with target='_blank'
-            lan_ip = device['lan_ip']
-            lan_ip_link = "http://{}".format(lan_ip)
-            content += "<td class='col2'><a href='{0}' target='_blank'>{1}</a></td>".format(lan_ip_link, lan_ip)
-
-            status_color = 'green' if device['lan_status'] == 'Up' else 'red'
-            content += "<td class='col3 status' style='color: {}'><b>{}</b></td>".format(status_color, device['lan_status'])
-            # Wrap WAN IP in a hyperlink with target='_blank'
-            wan_ip = device['wan_ip']
-            if wan_ip != "NA":
-                wan_ip_link = "http://{}".format(wan_ip)
-                content += "<td class='col4'><a href='{0}' target='_blank'>{1}</a></td>".format(wan_ip_link, wan_ip)
-            else:
-                content += "<td class='col4'>{}</td>".format(wan_ip)
-
-            if device['wan_status'] == 'NA':
-                status_color = 'black'  # Or any color for 'NA' status
-                content += "<td class='col5 status' style='color: {}'>{}</td>".format(status_color, device['wan_status'])
-            else:
-                status_color = 'green' if device['wan_status'] == 'Up' else 'red'
-                content += "<td class='col5 status' style='color: {}'><b>{}</b></td>".format(status_color, device['wan_status'])
-
-            content += "</tr>"
-
-        content += "</table>"
-        return content
-
     def get_dashboard_content(self):
-        content = "<html><head><title>Dashboard</title>"
-        content += "<meta http-equiv='refresh' content='5'>"  # Refresh every 5 seconds
-        # Add CSS styles for the table with dynamic column widths
-        content += "<style>"
-        content += "table { width: 50%; border-collapse: collapse; }"
-        content += "th, td { padding: 8px; border-bottom: 1px solid #ddd; }"
-        content += "th { text-align: center; background-color: #f2f2f2; }"
-        # Define column widths based on estimated content length
-        content += ".device-table .col1 { width: 120px; }"  # Adjust width as needed
-        content += ".device-table .col2 { width: 120px; }"  # Adjust width as needed
-        content += ".device-table .col3 { width: 80px; }"  # Adjust width as needed
-        content += ".device-table .col4 { width: 120px; }"  # Adjust width as needed
-        content += ".device-table .col5 { width: 80px; }"  # Adjust width as needed
-        content += ".status { color: black; text-align: center;}"  # Style for status class
-        content += "</style>"
-        content += "</head><body>"
-        content += '<button onclick="refreshData()" type="button">Refresh</button>'
-        content += self.render_dashboard()
-        content += """
-        <script>
-        function refreshData() {
-            fetch('/refresh')
-            .then(response => response.text())
-            .then(data => {
-                // Replace the body of the page with the new data
-                document.body.innerHTML = data;
-            });
-        }
-        </script>
-        """
-        content += "</body></html>"
+        devices = self.read_device_status()
+        content = (
+            "<!DOCTYPE html>"
+            "<html>"
+            "<head>"
+            "<meta charset=\"UTF-8\">"
+            "<title>Device Dashboard</title>"
+            "<link rel=\"icon\" href=\"/themes/custom/ribbon/images/favicon.ico\" type=\"image/vnd.microsoft.icon\">"
+            "<link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.0/css/bootstrap.min.css\">"
+            "<style>"
+            "body { padding: 20px; }"
+            ".device-table th, .device-table td { text-align: center; }"
+            ".status-up { color: green; font-weight: bold; }"
+            ".status-down { color: red; font-weight: bold; }"
+            "</style>"
+            "<script>"
+            "function refreshDashboard() {"
+            "    fetch('/refresh', { method: 'GET' })"
+            "    .then(response => {"
+            "        if (!response.ok) {"
+            "            throw new Error('Network response was not ok: ' + response.status);"
+            "        }"
+            "        return response.text();"
+            "    })"
+            "    .then(data => {"
+            "        var parser = new DOMParser();"
+            "        var doc = parser.parseFromString(data, 'text/html');"
+            "        var newTable = doc.querySelector('.device-table tbody').innerHTML;"
+            "        document.querySelector('.device-table tbody').innerHTML = newTable;"
+            "        console.log('Dashboard refreshed successfully');"
+            "    })"
+            "    .catch(error => {"
+            "        console.error('There has been a problem with your fetch operation:', error);"
+            "        alert('Failed to refresh dashboard. Check console for details.');"
+            "    });"
+            "}"
+            "function fetchPeriodicData() {"
+            "    fetch('/?timestamp=' + new Date().getTime(), { method: 'GET' })"
+            "    .then(response => {"
+            "        if (!response.ok) {"
+            "            throw new Error('Network response was not ok: ' + response.status);"
+            "        }"
+            "        return response.text();"
+            "    })"
+            "    .then(data => {"
+            "        var parser = new DOMParser();"
+            "        var doc = parser.parseFromString(data, 'text/html');"
+            "        var newTable = doc.querySelector('.device-table tbody').innerHTML;"
+            "        document.querySelector('.device-table tbody').innerHTML = newTable;"
+            "        console.log('Page updated successfully');"
+            "    })"
+            "    .catch(error => {"
+            "        console.error('There has been a problem with your fetch operation:', error);"
+            "    });"
+            "}"
+            "setInterval(fetchPeriodicData, 5000);"
+            "fetchPeriodicData();"
+            "</script>"
+            "</head>"
+            "<body>"
+            "<div class=\"container\">"
+            "<h1>Device Dashboard</h1>"
+            "<button class=\"btn btn-primary\" onclick=\"refreshDashboard()\">Refresh</button>"
+            "<table class=\"table table-bordered device-table mt-3\">"
+            "<thead>"
+            "<tr>"
+            "<th>LAN IP</th>"
+            "<th>LAN Status</th>"
+            "<th>WAN IP</th>"
+            "<th>WAN Status</th>"
+            "<th>Device Name</th>"
+            "</tr>"
+            "</thead>"
+            "<tbody>"
+        )
+        for device in devices:
+            lan_status_class = "status-up" if device[1].lower() == "up" else "status-down" if device[1].lower() == "down" else ""
+            wan_status_class = "status-up" if device[3].lower() == "up" else "status-down" if device[3].lower() == "down" else ""
+            content += (
+                "<tr>"
+                "<td>{}</td>"
+                "<td class=\"{}\">{}</td>"
+                "<td>{}</td>"
+                "<td class=\"{}\">{}</td>"
+                "<td>{}</td>"
+                "</tr>"
+            ).format(device[0], lan_status_class, device[1], device[2], wan_status_class, device[3], device[4])
+        content += (
+            "</tbody>"
+            "</table>"
+            "</div>"
+            "</body>"
+            "</html>"
+        )
         return content
 
     def end_headers(self):
@@ -147,15 +166,14 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
 IP = "192.168.0.151"
 PORT = 8000
 
-# Create a TCP server
+# Create a TCP server with SO_REUSEADDR option
 httpd = socketserver.TCPServer((IP, PORT), DashboardHandler)
+httpd.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
 print("Dashboard server is running at http://{}:{}".format(IP, PORT))
 
 try:
-    # Start serving
     httpd.serve_forever()
 except KeyboardInterrupt:
-    # Stop serving when Ctrl+C is pressed
     httpd.shutdown()
     print("\nServer stopped.")
