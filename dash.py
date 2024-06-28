@@ -110,7 +110,6 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
             "    })"
             "    .catch(error => {"
             "        console.error('There has been a problem with your fetch operation:', error);"
-            "        alert('Failed to update page. Check console for details.');"
             "    });"
             "}"
             "setInterval(fetchPeriodicData, 5000);"
