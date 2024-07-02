@@ -49,7 +49,7 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
             for line in file:
                 parts = line.strip().split(',')
                 if len(parts) >= 2:
-                    device_name, lan_info, wan_info = parts
+                    lan_info, wan_info, device_name = parts
                     lan_ip, lan_status = lan_info.split(':') + [""] * (2 - len(lan_info.split(':')))
                     wan_ip, wan_status = wan_info.split(':') + [""] * (2 - len(wan_info.split(':')))
                     devices.append((device_name, lan_ip, lan_status, wan_ip, wan_status))
