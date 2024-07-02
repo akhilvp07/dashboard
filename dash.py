@@ -52,7 +52,7 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
                     lan_info, wan_info, device_name = parts
                     lan_ip, lan_status = lan_info.split(':') + [""] * (2 - len(lan_info.split(':')))
                     wan_ip, wan_status = wan_info.split(':') + [""] * (2 - len(wan_info.split(':')))
-                    devices.append((lan_ip, lan_status, wan_ip, wan_status, device_name))
+                    devices.append((device_name, lan_ip, lan_status, wan_ip, wan_status))  # Adjusted order here
         self.devices_cache = devices
         self.last_read = time.time()
         return devices
@@ -124,27 +124,27 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
             "<table class=\"table table-bordered device-table mt-3\">"
             "<thead>"
             "<tr>"
+            "<th>Device Name</th>"
             "<th>LAN IP</th>"
             "<th>LAN Status</th>"
             "<th>WAN IP</th>"
             "<th>WAN Status</th>"
-            "<th>Device Name</th>"
             "</tr>"
             "</thead>"
             "<tbody>"
         )
         for device in devices:
-            lan_status_class = "status-up" if device[1].lower() == "up" else "status-down" if device[1].lower() == "down" else ""
-            wan_status_class = "status-up" if device[3].lower() == "up" else "status-down" if device[3].lower() == "down" else ""
+            lan_status_class = "status-up" if device[2].lower() == "up" else "status-down" if device[2].lower() == "down" else ""
+            wan_status_class = "status-up" if device[4].lower() == "up" else "status-down" if device[4].lower() == "down" else ""
             content += (
                 "<tr>"
                 "<td>{}</td>"
-                "<td class=\"{}\">{}</td>"
                 "<td>{}</td>"
                 "<td class=\"{}\">{}</td>"
                 "<td>{}</td>"
+                "<td class=\"{}\">{}</td>"
                 "</tr>"
-            ).format(device[0], lan_status_class, device[1], device[2], wan_status_class, device[3], device[4])
+            ).format(device[0], device[1], lan_status_class, device[2], device[3], wan_status_class, device[4])
         content += (
             "</tbody>"
             "</table>"
