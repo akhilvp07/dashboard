@@ -3,6 +3,7 @@ import socketserver
 import os
 import time
 import subprocess
+import socket
 
 STATUS_FILE = "/home/akhil/.config/pingstatus/device_status.conf"
 
@@ -21,12 +22,14 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
             self.end_headers()
             content = self.get_dashboard_content()
             self.wfile.write(content.encode('utf-8'))
+            self.finish()  # Close the connection after handling the request
         else:
             self.send_response(200)
             self.send_header('Content-type', 'text/html')
             self.end_headers()
             content = self.get_dashboard_content()
             self.wfile.write(content.encode('utf-8'))
+            self.finish()  # Close the connection after handling the request
 
     def read_device_status(self):
         # Check if cache is still valid
@@ -103,7 +106,7 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
 
     def get_dashboard_content(self):
         content = "<html><head><title>Dashboard</title>"
-        content += "<meta http-equiv='refresh' content='5'>"  # Refresh every 5 seconds
+        #content += "<meta http-equiv='refresh' content='5'>"  # Refresh every 5 seconds
         # Add CSS styles for the table with dynamic column widths
         content += "<style>"
         content += "table { width: 50%; border-collapse: collapse; }"
@@ -132,6 +135,34 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
         }
         </script>
         """
+        content += """
+        <script>
+        function fetchPeriodicData() {
+            var url = '/?timestamp=' + new Date().getTime(); // Add cache-busting parameter
+            fetch(url)
+            .then(response => response.text())
+            .then(data => {
+                // Replace only the content of the table with the new data
+                var table = document.querySelector('.device-table');
+                table.innerHTML = getTableRows(data);
+            });
+        }
+
+        function getTableRows(data) {
+            // Parse the HTML string to extract the table rows
+            var parser = new DOMParser();
+            var doc = parser.parseFromString(data, 'text/html');
+            var newTable = doc.querySelector('.device-table').innerHTML;
+            return newTable;
+        }
+
+        // Fetch data every 5 seconds
+        setInterval(fetchPeriodicData, 5000);
+
+        // Initial data fetch
+        fetchPeriodicData();
+        </script>
+        """
         content += "</body></html>"
         return content
 
@@ -142,13 +173,15 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
     def do_HEAD(self):
         self.send_response(200)
         self.end_headers()
+        self.finish() # Close the connection after handling the request
 
 # Set the IP address and port
 IP = "192.168.0.151"
 PORT = 8000
 
-# Create a TCP server
+# Create a TCP server with SO_REUSEADDR option
 httpd = socketserver.TCPServer((IP, PORT), DashboardHandler)
+httpd.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
 print("Dashboard server is running at http://{}:{}".format(IP, PORT))
 
