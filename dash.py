@@ -21,7 +21,7 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
                 self.send_response(200)
                 self.send_header('Content-type', 'text/html')
                 self.end_headers()
-                content = self.get_dashboard_content()
+                content = self.get_dashboard_content(force_update=True)
                 self.wfile.write(content.encode('utf-8'))
             except subprocess.CalledProcessError as e:
                 print("Error executing command (CalledProcessError):", e)
@@ -38,27 +38,27 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
             content = self.get_dashboard_content()
             self.wfile.write(content.encode('utf-8'))
 
-    def read_device_status(self):
-        # Check if cache is still valid
-        if time.time() - self.last_read < self.CACHE_EXPIRY:
+    def read_device_status(self, force_update=False):
+        # Check if cache is still valid unless force_update is True
+        if not force_update and time.time() - self.last_read < self.CACHE_EXPIRY:
             return self.devices_cache
 
-        # If the cache is expired, read the status file and update the cache
+        # If the cache is expired or force_update is True, read the status file and update the cache
         devices = []
         with open(STATUS_FILE, 'r') as file:
             for line in file:
                 parts = line.strip().split(',')
                 if len(parts) >= 2:
-                    lan_info, wan_info, device_name = parts
+                    device_name, lan_info, wan_info = parts
                     lan_ip, lan_status = lan_info.split(':') + [""] * (2 - len(lan_info.split(':')))
                     wan_ip, wan_status = wan_info.split(':') + [""] * (2 - len(wan_info.split(':')))
-                    devices.append((device_name, lan_ip, lan_status, wan_ip, wan_status))  # Adjusted order here
+                    devices.append((device_name, lan_ip, lan_status, wan_ip, wan_status))
         self.devices_cache = devices
         self.last_read = time.time()
         return devices
 
-    def get_dashboard_content(self):
-        devices = self.read_device_status()
+    def get_dashboard_content(self, force_update=False):
+        devices = self.read_device_status(force_update)
         content = (
             "<!DOCTYPE html>"
             "<html>"
