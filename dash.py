@@ -20,6 +20,10 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
                 print("Command executed successfully")
                 self.send_response(200)
                 self.send_header('Content-type', 'text/html')
+                # Set cache control headers to prevent caching
+                self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
+                self.send_header('Pragma', 'no-cache')
+                self.send_header('Expires', '0')
                 self.end_headers()
                 content = self.get_dashboard_content(force_update=True)
                 self.wfile.write(content.encode('utf-8'))
