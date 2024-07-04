@@ -142,15 +142,29 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
         for device in devices:
             lan_status_class = "status-up" if device[2].lower() == "up" else "status-down" if device[2].lower() == "down" else ""
             wan_status_class = "status-up" if device[4].lower() == "up" else "status-down" if device[4].lower() == "down" else ""
-            content += (
-                "<tr>"
-                "<td>{}</td>"
-                "<td>{}</td>"
-                "<td class=\"{}\">{}</td>"
-                "<td>{}</td>"
-                "<td class=\"{}\">{}</td>"
-                "</tr>"
-            ).format(device[0], device[1], lan_status_class, device[2], device[3], wan_status_class, device[4])
+            # Convert LAN and WAN IPs to clickable URLs
+            lan_ip_url = "http://" + device[1]
+            if device[3] != "NA":
+                wan_ip_url = "http://" + device[3]
+                content += (
+                    "<tr>"
+                    "<td>{}</td>"
+                    "<td><a href=\"{}\" target=\"_blank\">{}</a></td>"
+                    "<td class=\"{}\">{}</td>"
+                    "<td><a href=\"{}\" target=\"_blank\">{}</a></td>"
+                    "<td class=\"{}\">{}</td>"
+                    "</tr>"
+                ).format(device[0], lan_ip_url, device[1], lan_status_class, device[2], wan_ip_url, device[3], wan_status_class, device[4])
+            else:
+                content += (
+                    "<tr>"
+                    "<td>{}</td>"
+                    "<td><a href=\"{}\" target=\"_blank\">{}</a></td>"
+                    "<td class=\"{}\">{}</td>"
+                    "<td>{}</td>"
+                    "<td class=\"{}\">{}</td>"
+                    "</tr>"
+                ).format(device[0], lan_ip_url, device[1], lan_status_class, device[2], device[3], wan_status_class, device[4])
         content += (
             "</tbody>"
             "</table>"
