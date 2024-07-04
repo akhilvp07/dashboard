@@ -148,7 +148,7 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
                 wan_ip_url = "http://" + device[3]
                 content += (
                     "<tr>"
-                    "<td>{}</td>"
+                    "<td style=\"text-align: left; font-weight: bold\">{}</td>"
                     "<td><a href=\"{}\" target=\"_blank\">{}</a></td>"
                     "<td class=\"{}\">{}</td>"
                     "<td><a href=\"{}\" target=\"_blank\">{}</a></td>"
@@ -158,7 +158,7 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
             else:
                 content += (
                     "<tr>"
-                    "<td>{}</td>"
+                    "<td style=\"text-align: left; font-weight: bold\">{}</td>"
                     "<td><a href=\"{}\" target=\"_blank\">{}</a></td>"
                     "<td class=\"{}\">{}</td>"
                     "<td>{}</td>"
