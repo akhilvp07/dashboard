@@ -92,9 +92,6 @@ write_device_status() {
     # Update the existing line with the new status (all info)
     sed -i "s/^$lan_ip:.*/$device_status/" "$file_path"
   fi
-
-  # Sort the status file
-  sort_device_status
 }
 
 
@@ -269,6 +266,8 @@ else
             1)
                 # Do ping, display and write status
                 do_action "--all"
+                # Sort the status file
+                sort_device_status
                 ;;
             2)
                 # Add a new device
