@@ -49,6 +49,22 @@ display_ping_status() {
     fi
 }
 
+# Function to sort STATUS_FILE entries based on lan_ip.
+# 109 network will be prioritized over 107 network entries.
+sort_device_status() {
+    local file_path=$STATUS_FILE
+    # First, sort all lines by IP address numerically
+    awk -F ':' '{ print $0 }' "$file_path" | \
+    sort -t '.' -k1,1n -k2,2n -k3,3n -k4,4n | \
+
+    # Then prioritize lines that start with 192.168.109. over others
+    awk '
+        /^192\.168\.109\./ { print; next } 
+        /^192\.168\.107\./ { pending = pending $0 "\n" } 
+        END { printf "%s", pending }
+    '
+}
+
 write_device_status() {
   local lan_ip=$1
   local wan_ip=$2
@@ -76,6 +92,9 @@ write_device_status() {
     # Update the existing line with the new status (all info)
     sed -i "s/^$lan_ip:.*/$device_status/" "$file_path"
   fi
+
+  # Sort the status file
+  sort_device_status
 }
 
 
