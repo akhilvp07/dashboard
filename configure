@@ -13,7 +13,10 @@ else
     exit 1
 fi
 
-cp "$CFG_FILE_PATH/devices.conf" "$CFG_PATH"
+# copy devices.conf file only if it doesn't exist in CFG_PATH
+if [ ! -f "$CFG_PATH/devices.conf" ]; then
+    cp "$CFG_FILE_PATH/devices.conf" "$CFG_PATH"
+fi
 
 echo "Config done successfully"
 

@@ -49,6 +49,24 @@ display_ping_status() {
     fi
 }
 
+# Function to sort STATUS_FILE entries based on lan_ip.
+# 109 network will be prioritized over 107 network entries.
+sort_device_status() {
+    local file_path=$STATUS_FILE
+    local sorted_output
+
+    # First, sort all lines by IP address numerically and store in a variable
+    sorted_output=$(awk -F ':' '{ print $0 }' "$file_path" | \
+    sort -t '.' -k1,1n -k2,2n -k3,3n -k4,4n)
+
+    # Then prioritize lines that start with 192.168.109. over others
+    echo "$sorted_output" | awk '
+        /^192\.168\.109\./ { print; next } 
+        /^192\.168\.107\./ { pending = pending $0 "\n" } 
+        END { printf "%s", pending }
+    ' > /dev/null  # Redirect output to /dev/null to suppress printing
+}
+
 write_device_status() {
   local lan_ip=$1
   local wan_ip=$2
@@ -113,27 +131,62 @@ add_new_device() {
             echo "Invalid WAN IP address format. Please try again."
         fi
     done
+
+    # Check if the device already exists
+    if grep -q "^$lan_ip," "$CONFIG_FILE"; then
+        # Remove the existing device entry from the configuration file
+        sed -i "/^$lan_ip,/d" "$CONFIG_FILE"
+        # Check if the device exists in the status file
+        grep -q "^$lan_ip:" "$STATUS_FILE"
+        if [ $? -eq 0 ]; then
+            # Remove the device entry from the status file
+            sed -i "/^$lan_ip:/d" "$STATUS_FILE"
+        fi
+        echo "Existing device entry removed."
+    fi
+
     # Append new device to the configuration file
     echo "$lan_ip,$wan_ip,$name" >> "$CONFIG_FILE"
     echo "Device added successfully."
 }
 
+#Function to delete existing device
+delete_existing_device() {
+    # Prompt for LAN IP address with validation
+    while true; do
+        echo "Enter LAN IP address:"
+        read -r lan_ip
+
+        # Regular expression for valid IPv4 address
+        re='^(([0-9]?[0-9]|1[0-9][0-9]|2([0-4][0-9]|5[0-5]))\.){3}([0-9]?[0-9]|1[0-9][0-9]|2([0-4][0-9]|5[0-5]))$'
+
+        if [[ $lan_ip =~ $re ]]; then
+            break
+        else
+            echo "Invalid LAN IP address format. Please try again."
+        fi
+    done
+
+    # Delete the device with lan_ip
+    delete_device "$lan_ip"
+    
+}
+
 # Function to delete a device from the configuration file
 delete_device() {
-    echo "Enter the LAN IP address of the device to delete:"
-    read -r lan_ip
+    local lan_ip=$1
 
     # Check if the device exists
     grep -q "^$lan_ip," "$CONFIG_FILE"
     if [ $? -eq 0 ]; then
         # Remove the device entry from the configuration file
         sed -i "/^$lan_ip,/d" "$CONFIG_FILE"
-            # Check if the device exists in the status file
-            grep -q "^$lan_ip:" "$STATUS_FILE"
-            if [ $? -eq 0 ]; then
-                # Remove the device entry from the status file
-                sed -i "/^$lan_ip:/d" "$STATUS_FILE"
-            fi
+        # Check if the device exists in the status file
+        grep -q "^$lan_ip:" "$STATUS_FILE"
+        if [ $? -eq 0 ]; then
+            # Remove the device entry from the status file
+            sed -i "/^$lan_ip:/d" "$STATUS_FILE"
+        fi
         echo "Device deleted successfully."
     else
         echo "Device not found."
@@ -215,6 +268,8 @@ else
             1)
                 # Do ping, display and write status
                 do_action "--all"
+                # Sort the status file
+                sort_device_status
                 ;;
             2)
                 # Add a new device
@@ -222,7 +277,7 @@ else
                 ;;
             3)
                 # Delete a device
-                delete_device
+                delete_existing_device
                 ;;
             4)
                 echo "Exiting."
