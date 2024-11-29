@@ -54,7 +54,6 @@ display_ping_status() {
 sort_device_status() {
     local file_path=$STATUS_FILE
     local sorted_output
-
     # First, sort all lines by IP address numerically and store in a variable
     sorted_output=$(awk -F ':' '{ print $0 }' "$file_path" | \
     sort -t '.' -k1,1n -k2,2n -k3,3n -k4,4n)
@@ -64,7 +63,7 @@ sort_device_status() {
         /^192\.168\.109\./ { print; next } 
         /^192\.168\.107\./ { pending = pending $0 "\n" } 
         END { printf "%s", pending }
-    ' > /dev/null  # Redirect output to /dev/null to suppress printing
+    ' > "$file_path"  # Redirect output back to the original file
 }
 
 write_device_status() {
