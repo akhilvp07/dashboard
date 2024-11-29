@@ -41,6 +41,7 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
             self.end_headers()
             content = self.get_dashboard_content()
             self.wfile.write(content.encode('utf-8'))
+            self.finish()  # Close the connection after handling the request
 
     def read_device_status(self, force_update=False):
         # Check if cache is still valid unless force_update is True
@@ -181,6 +182,7 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
     def do_HEAD(self):
         self.send_response(200)
         self.end_headers()
+        self.finish() # Close the connection after handling the request
 
 # Set the IP address and port
 IP = "192.168.0.151"
