@@ -1,6 +1,6 @@
 #!/bin/bash
 
-process_name="/home/akhil/dashboard/dash.py"
+process_name="/home/akhil/dashboard/dash_itp.py"
 
 #Function to run the dashboard process
 run_dash() {

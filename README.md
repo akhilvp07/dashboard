@@ -19,7 +19,7 @@ Dashboard to show ping status for configured devices. To be run from Fedora 20.
     run_pingstatus_itp
     ```
 
-3. Go to browser and enter URL: [192.168.0.151:8000](http://192.168.0.151:8000/)
+3. Go to browser and enter URL: [192.168.0.151:8080](http://192.168.0.151:8080/)
 
 ## Note:
 To check the running status:(2 process should be running)
