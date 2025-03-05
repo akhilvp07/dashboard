@@ -13,9 +13,9 @@ else
     exit 1
 fi
 
-# copy devices.conf file only if it doesn't exist in CFG_PATH
-if [ ! -f "$CFG_PATH/devices.conf" ]; then
-    cp "$CFG_FILE_PATH/devices.conf" "$CFG_PATH"
+# copy devices_itp.conf file only if it doesn't exist in CFG_PATH
+if [ ! -f "$CFG_PATH/devices_itp.conf" ]; then
+    cp "$CFG_FILE_PATH/devices_itp.conf" "$CFG_PATH"
 fi
 
 echo "Config done successfully"
@@ -23,10 +23,10 @@ echo "Config done successfully"
 echo "Starting services"
 
 #start dashboard
-start_dashboard
+start_dashboard_itp
 
 #run pingstatus
-run_pingstatus
+run_pingstatus_itp
 
 echo "Services started successfully"
 

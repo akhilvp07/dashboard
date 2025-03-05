@@ -9,8 +9,8 @@ if [[ ! -d "$HOME/.config/$script_name" ]]; then
 fi
 
 # Set the configuration file path
-CONFIG_FILE="$HOME/.config/$script_name/devices.conf"
-STATUS_FILE="$HOME/.config/$script_name/device_status.conf"
+CONFIG_FILE="$HOME/.config/$script_name/devices_itp.conf"
+STATUS_FILE="$HOME/.config/$script_name/device_status_itp.conf"
 
 
 # Function to display the menu

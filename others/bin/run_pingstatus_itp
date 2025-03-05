@@ -1,0 +1,11 @@
+#!/bin/sh
+
+SCRIPT_PATH=~/dashboard/pingstatus
+
+killall run_pingstatus_itp.sh > /dev/null 2>&1
+
+"$SCRIPT_PATH"/run_pingstatus_itp.sh  > /dev/null 2>&1 &
+background_pid=$!
+echo "Running script "$SCRIPT_PATH"/run_pingstatus_itp.sh with PID: $background_pid"
+
+

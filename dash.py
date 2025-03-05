@@ -5,8 +5,8 @@ import time
 import subprocess
 import socket
 
-STATUS_FILE = "/home/akhil/.config/pingstatus/device_status.conf"
-CONFIG_FILE = "/home/akhil/.config/pingstatus/devices.conf"
+STATUS_FILE = "/home/akhil/.config/pingstatus/device_status_itp.conf"
+CONFIG_FILE = "/home/akhil/.config/pingstatus/devices_itp.conf"
 
 class DashboardHandler(http.server.BaseHTTPRequestHandler):
     CACHE_EXPIRY = 5  # Cache expiry time in seconds (5 seconds)
@@ -326,7 +326,7 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
 
 # Set the IP address and port
 IP = "192.168.0.151"
-PORT = 8000
+PORT = 8080
 
 # Create a TCP server with SO_REUSEADDR option
 httpd = socketserver.TCPServer((IP, PORT), DashboardHandler)
