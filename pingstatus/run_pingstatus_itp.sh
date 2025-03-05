@@ -2,10 +2,10 @@
 
 BIN_PATH=~/bin
 
-# Function to run the pingstatus script with the --sync flag
+# Function to run the pingstatus_itp script with the --sync flag
 do_pingstatus_check() {
-  #nohup $BIN_PATH/pingstatus --sync &> /dev/null &
-  nohup $BIN_PATH/pingstatus --sync > /dev/null 2>&1 &
+  #nohup $BIN_PATH/pingstatus_itp --sync &> /dev/null &
+  nohup $BIN_PATH/pingstatus_itp --sync > /dev/null 2>&1 &
 }
 
 do_pingstatus_check
