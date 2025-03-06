@@ -1,17 +1,19 @@
 #!/bin/bash
 
 # Get the script name (without extension)
-script_name=$(basename "$0")
+cfg_dir="pingstatus"
 
-# Create the script_name directory within ~/.config if it doesn't exist
-if [[ ! -d "$HOME/.config/$script_name" ]]; then
-    mkdir -p "$HOME/.config/$script_name"
+# Create the cfg_dir directory within ~/.config if it doesn't exist
+if [[ ! -d "$HOME/.config/$cfg_dir" ]]; then
+    mkdir -p "$HOME/.config/$cfg_dir"
 fi
 
-# Set the configuration file path
-CONFIG_FILE="$HOME/.config/$script_name/devices_itp.conf"
-STATUS_FILE="$HOME/.config/$script_name/device_status_itp.conf"
+# Source the host configuration file
+source ~/config/dashboard.conf
 
+# Set the configuration file path
+CONFIG_FILE="$HOME/.config/$cfg_dir/devices_itp.conf"
+STATUS_FILE="$HOME/.config/$cfg_dir/device_status_itp.conf"
 
 # Function to display the menu
 display_menu() {
@@ -25,12 +27,13 @@ display_menu() {
 # Function to ping an IP address and return the status
 ping_ip() {
     local ip=$1
-    ping -c 1 -W 1 "$ip" &> /dev/null
-    if [ $? -eq 0 ]; then
-        echo "Up"
-    else
-        echo "Down"
+    if [ -z "$ip" ]; then
+        echo "NA"
+        return
     fi
+    # ping -c 1 -W 1 "$ip" &> /dev/null
+    sshpass -p "$HOST_PW" ssh -n -o StrictHostKeyChecking=no -o PreferredAuthentications=password "$HOST" \
+        "ping -c 1 -W 1 $ip > /dev/null 2>&1 && echo 'Up' || echo 'Down'"
 }
 
 # Function to display ping status in a table format
