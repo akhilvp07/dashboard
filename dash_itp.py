@@ -360,7 +360,7 @@ IP = "192.168.0.151"
 PORT = 8080
 
 # Create a TCP server with SO_REUSEADDR option
-httpd = socketserver.TCPServer((IP, PORT), DashboardHandler)
+httpd = socketserver.ThreadingTCPServer((IP, PORT), DashboardHandler)
 httpd.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
 print("Dashboard server is running at http://{}:{}".format(IP, PORT))
