@@ -226,11 +226,15 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
             "        alert('Failed to delete device. Check console for details.');"
             "    });"
             "}"
-            "function editDevice(oldDeviceName) {"
-            "    var newDeviceName = prompt('Enter new device name:', oldDeviceName);"
-            "    var lanIp = prompt('Enter new LAN IP:');"
-            "    var wanIp = prompt('Enter new WAN IP (optional):');"
-            "    var data = oldDeviceName + ',' + newDeviceName + ',' + lanIp + ',' + wanIp;"
+            "function editDevice(oldDeviceName, lanIp, wanIp) {"
+            "    var deviceDetails = prompt('Enter new details (name,LAN IP,WAN IP):', oldDeviceName + ',' + lanIp + ',' + wanIp);"
+            "    if (deviceDetails === null) return;"  # Cancel pressed
+            "    var [newDeviceName, newLanIp, newWanIp] = deviceDetails.split(',');"
+            "    if (!newDeviceName || !newLanIp) {"
+            "        alert('Device name and LAN IP are required.');"
+            "        return;"
+            "    }"
+            "    var data = oldDeviceName + ',' + newDeviceName + ',' + newLanIp + ',' + newWanIp;"
             "    fetch('/edit', { method: 'POST', body: data })"
             "    .then(response => {"
             "        if (!response.ok) {"
@@ -282,13 +286,13 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
                     "<td><a href=\"{}\" target=\"_blank\">{}</a></td>"
                     "<td class=\"{}\">{}</td>"
                     "<td>"
-                    "<button class=\"btn btn-warning btn-sm\" onclick=\"editDevice('{}')\">"
+                    "<button class=\"btn btn-warning btn-sm\" onclick=\"editDevice('{}', '{}', '{}')\">"
                     "<i class=\"fas fa-edit\"></i></button>"
                     "<button class=\"btn btn-danger btn-sm\" onclick=\"deleteDevice('{}')\">"
                     "<i class=\"fas fa-trash-alt\"></i></button>"
                     "</td>"
                     "</tr>"
-                ).format(device[0], lan_ip_url, device[1], lan_status_class, device[2], wan_ip_url, device[3], wan_status_class, device[4], device[0], device[0])
+                ).format(device[0], lan_ip_url, device[1], lan_status_class, device[2], wan_ip_url, device[3], wan_status_class, device[4], device[0], device[1], device[3], device[0])
             else:
                 content += (
                     "<tr>"
@@ -298,13 +302,13 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
                     "<td>{}</td>"
                     "<td class=\"{}\">{}</td>"
                     "<td>"
-                    "<button class=\"btn btn-warning btn-sm\" onclick=\"editDevice('{}')\">"
+                    "<button class=\"btn btn-warning btn-sm\" onclick=\"editDevice('{}', '{}', '{}')\">"
                     "<i class=\"fas fa-edit\"></i></button>"
                     "<button class=\"btn btn-danger btn-sm\" onclick=\"deleteDevice('{}')\">"
                     "<i class=\"fas fa-trash-alt\"></i></button>"
                     "</td>"
                     "</tr>"
-                ).format(device[0], lan_ip_url, device[1], lan_status_class, device[2], device[3], wan_status_class, device[4], device[0], device[0])
+                ).format(device[0], lan_ip_url, device[1], lan_status_class, device[2], device[3], wan_status_class, device[4], device[0], device[1], device[3], device[0])
         content += (
             "</tbody>"
             "</table>"
