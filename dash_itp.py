@@ -50,10 +50,20 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
             # Handle adding a new entry
             content_length = int(self.headers['Content-Length'])
             post_data = self.rfile.read(content_length).decode('utf-8')
-            device_name, lan_ip, wan_ip = post_data.split(',')
-            new_entry = "{},{},{}\n".format(lan_ip, wan_ip, device_name)
-            new_status_entry = "{}:{},".format(lan_ip, "unknown") + "{}:{},".format(wan_ip, "unknown") + "{}\n".format(device_name)
+            new_device_name, new_lan_ip, new_wan_ip = post_data.split(',')
+            new_entry = "{},{},{}\n".format(new_lan_ip, new_wan_ip, new_device_name)
+            new_status_entry = "{}:{},".format(new_lan_ip, "unknown") + "{}:{},".format(new_wan_ip, "unknown") + "{}\n".format(new_device_name)
             
+            # Check for IP conflicts
+            with open(CONFIG_FILE, 'r') as file:
+                config_lines = file.readlines()
+            for line in config_lines:
+                lan_ip, wan_ip, _ = line.strip().split(',')
+                if lan_ip == new_lan_ip:
+                    self.send_response(409)  # Conflict
+                    self.end_headers()
+                    return
+
             # Update CONFIG_FILE
             with open(CONFIG_FILE, 'r') as file:
                 config_lines = file.readlines()
