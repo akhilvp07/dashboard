@@ -86,18 +86,18 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
             # Handle deleting an entry
             content_length = int(self.headers['Content-Length'])
             post_data = self.rfile.read(content_length).decode('utf-8')
-            device_name = post_data.strip()
+            lan_ip = post_data.strip()
             with open(STATUS_FILE, 'r') as file:
                 lines = file.readlines()
             with open(STATUS_FILE, 'w') as file:
                 for line in lines:
-                    if device_name not in line:
+                    if lan_ip not in line.split(':')[0]:
                         file.write(line)
             with open(CONFIG_FILE, 'r') as file:
                 lines = file.readlines()
             with open(CONFIG_FILE, 'w') as file:
                 for line in lines:
-                    if device_name not in line:
+                    if lan_ip not in line.split(',')[0]:
                         file.write(line)
             self.send_response(200)
             self.end_headers()
@@ -221,8 +221,11 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
             "}"
             "function addDevice() {"
             "    var deviceName = prompt('Enter device name:');"
+            "    if (deviceName === null) return;"  # Cancel pressed
             "    var lanIp = prompt('Enter LAN IP:');"
+            "    if (lanIp === null) return;"  # Cancel pressed
             "    var wanIp = prompt('Enter WAN IP (optional):');"
+            "    if (wanIp === null) return;"  # Cancel pressed
             "    var data = deviceName + ',' + lanIp + ',' + wanIp;"
             "    fetch('/add', { method: 'POST', body: data })"
             "    .then(response => {"
@@ -236,8 +239,9 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
             "        alert('Failed to add device. Check console for details.');"
             "    });"
             "}"
-            "function deleteDevice(deviceName) {"
-            "    fetch('/delete', { method: 'POST', body: deviceName })"
+            "function deleteDevice(lanIp) {"
+            "    if (!confirm('Are you sure you want to delete the device with LAN IP ' + lanIp + '?')) return;"  # Add confirmation prompt
+            "    fetch('/delete', { method: 'POST', body: lanIp })"
             "    .then(response => {"
             "        if (!response.ok) {"
             "            throw new Error('Network response was not ok: ' + response.status);"
@@ -315,7 +319,7 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
                     "<i class=\"fas fa-trash-alt\"></i></button>"
                     "</td>"
                     "</tr>"
-                ).format(device[0], lan_ip_url, device[1], lan_status_class, device[2], wan_ip_url, device[3], wan_status_class, device[4], device[0], device[1], device[3], device[0])
+                ).format(device[0], lan_ip_url, device[1], lan_status_class, device[2], wan_ip_url, device[3], wan_status_class, device[4], device[0], device[1], device[3], device[1])
             else:
                 content += (
                     "<tr>"
@@ -331,7 +335,7 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
                     "<i class=\"fas fa-trash-alt\"></i></button>"
                     "</td>"
                     "</tr>"
-                ).format(device[0], lan_ip_url, device[1], lan_status_class, device[2], device[3], wan_status_class, device[4], device[0], device[1], device[3], device[0])
+                ).format(device[0], lan_ip_url, device[1], lan_status_class, device[2], device[3], wan_status_class, device[4], device[0], device[1], device[3], device[1])
         content += (
             "</tbody>"
             "</table>"
