@@ -50,10 +50,20 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
             # Handle adding a new entry
             content_length = int(self.headers['Content-Length'])
             post_data = self.rfile.read(content_length).decode('utf-8')
-            device_name, lan_ip, wan_ip = post_data.split(',')
-            new_entry = "{},{},{}\n".format(lan_ip, wan_ip, device_name)
-            new_status_entry = "{}:{},".format(lan_ip, "unknown") + "{}:{},".format(wan_ip, "unknown") + "{}\n".format(device_name)
+            new_device_name, new_lan_ip, new_wan_ip = post_data.split(',')
+            new_entry = "{},{},{}\n".format(new_lan_ip, new_wan_ip, new_device_name)
+            new_status_entry = "{}:{},".format(new_lan_ip, "unknown") + "{}:{},".format(new_wan_ip, "unknown") + "{}\n".format(new_device_name)
             
+            # Check for IP conflicts
+            with open(CONFIG_FILE, 'r') as file:
+                config_lines = file.readlines()
+            for line in config_lines:
+                lan_ip, wan_ip, _ = line.strip().split(',')
+                if lan_ip == new_lan_ip:
+                    self.send_response(409)  # Conflict
+                    self.end_headers()
+                    return
+
             # Update CONFIG_FILE
             with open(CONFIG_FILE, 'r') as file:
                 config_lines = file.readlines()
@@ -76,18 +86,18 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
             # Handle deleting an entry
             content_length = int(self.headers['Content-Length'])
             post_data = self.rfile.read(content_length).decode('utf-8')
-            device_name = post_data.strip()
+            lan_ip = post_data.strip()
             with open(STATUS_FILE, 'r') as file:
                 lines = file.readlines()
             with open(STATUS_FILE, 'w') as file:
                 for line in lines:
-                    if device_name not in line:
+                    if lan_ip not in line.split(':')[0]:
                         file.write(line)
             with open(CONFIG_FILE, 'r') as file:
                 lines = file.readlines()
             with open(CONFIG_FILE, 'w') as file:
                 for line in lines:
-                    if device_name not in line:
+                    if lan_ip not in line.split(',')[0]:
                         file.write(line)
             self.send_response(200)
             self.end_headers()
@@ -95,16 +105,29 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
             # Handle editing an entry
             content_length = int(self.headers['Content-Length'])
             post_data = self.rfile.read(content_length).decode('utf-8')
-            old_device_name, new_device_name, lan_ip, wan_ip = post_data.split(',')
-            new_status_entry = "{}:{},".format(lan_ip, "unknown") + "{}:{},".format(wan_ip, "unknown") + "{}\n".format(new_device_name)
-            new_config_entry = "{},{},{}\n".format(lan_ip, wan_ip, new_device_name)
+            old_lan_ip, new_device_name, new_lan_ip, new_wan_ip = post_data.split(',')
+
+            # Check for IP conflicts
+            with open(CONFIG_FILE, 'r') as file:
+                config_lines = file.readlines()
+            for line in config_lines:
+                lan_ip, wan_ip, _ = line.strip().split(',')
+                if (lan_ip == new_lan_ip and lan_ip != old_lan_ip) or (wan_ip == new_wan_ip and wan_ip != "NA" and new_wan_ip != "NA"):
+                    if (lan_ip == old_lan_ip and lan_ip == new_lan_ip and wan_ip == new_wan_ip):
+                        continue  # Allow changing the device name alone
+                    self.send_response(409)  # Conflict
+                    self.end_headers()
+                    return
+
+            new_status_entry = "{}:{},".format(new_lan_ip, "unknown") + "{}:{},".format(new_wan_ip, "unknown") + "{}\n".format(new_device_name)
+            new_config_entry = "{},{},{}\n".format(new_lan_ip, new_wan_ip, new_device_name)
             
             # Update STATUS_FILE
             with open(STATUS_FILE, 'r') as file:
                 status_lines = file.readlines()
             with open(STATUS_FILE, 'w') as file:
                 for line in status_lines:
-                    if old_device_name in line:
+                    if old_lan_ip in line:
                         file.write(new_status_entry)
                     else:
                         file.write(line)
@@ -114,7 +137,7 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
                 config_lines = file.readlines()
             with open(CONFIG_FILE, 'w') as file:
                 for line in config_lines:
-                    if old_device_name in line:
+                    if old_lan_ip in line:
                         file.write(new_config_entry)
                     else:
                         file.write(line)
@@ -198,8 +221,11 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
             "}"
             "function addDevice() {"
             "    var deviceName = prompt('Enter device name:');"
+            "    if (deviceName === null) return;"  # Cancel pressed
             "    var lanIp = prompt('Enter LAN IP:');"
+            "    if (lanIp === null) return;"  # Cancel pressed
             "    var wanIp = prompt('Enter WAN IP (optional):');"
+            "    if (wanIp === null) return;"  # Cancel pressed
             "    var data = deviceName + ',' + lanIp + ',' + wanIp;"
             "    fetch('/add', { method: 'POST', body: data })"
             "    .then(response => {"
@@ -213,8 +239,9 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
             "        alert('Failed to add device. Check console for details.');"
             "    });"
             "}"
-            "function deleteDevice(deviceName) {"
-            "    fetch('/delete', { method: 'POST', body: deviceName })"
+            "function deleteDevice(lanIp) {"
+            "    if (!confirm('Are you sure you want to delete the device with LAN IP ' + lanIp + '?')) return;"  # Add confirmation prompt
+            "    fetch('/delete', { method: 'POST', body: lanIp })"
             "    .then(response => {"
             "        if (!response.ok) {"
             "            throw new Error('Network response was not ok: ' + response.status);"
@@ -226,11 +253,15 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
             "        alert('Failed to delete device. Check console for details.');"
             "    });"
             "}"
-            "function editDevice(oldDeviceName) {"
-            "    var newDeviceName = prompt('Enter new device name:', oldDeviceName);"
-            "    var lanIp = prompt('Enter new LAN IP:');"
-            "    var wanIp = prompt('Enter new WAN IP (optional):');"
-            "    var data = oldDeviceName + ',' + newDeviceName + ',' + lanIp + ',' + wanIp;"
+            "function editDevice(oldDeviceName, oldLanIp, oldWanIp) {"
+            "    var deviceDetails = prompt('Enter new details (name,LAN IP,WAN IP):', oldDeviceName + ',' + oldLanIp + ',' + oldWanIp);"
+            "    if (deviceDetails === null) return;"  # Cancel pressed
+            "    var [newDeviceName, newLanIp, newWanIp] = deviceDetails.split(',');"
+            "    if (!newDeviceName || !newLanIp) {"
+            "        alert('Device name and LAN IP are required.');"
+            "        return;"
+            "    }"
+            "    var data = oldLanIp + ',' + newDeviceName + ',' + newLanIp + ',' + newWanIp;"
             "    fetch('/edit', { method: 'POST', body: data })"
             "    .then(response => {"
             "        if (!response.ok) {"
@@ -282,13 +313,13 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
                     "<td><a href=\"{}\" target=\"_blank\">{}</a></td>"
                     "<td class=\"{}\">{}</td>"
                     "<td>"
-                    "<button class=\"btn btn-warning btn-sm\" onclick=\"editDevice('{}')\">"
+                    "<button class=\"btn btn-warning btn-sm\" onclick=\"editDevice('{}', '{}', '{}')\">"
                     "<i class=\"fas fa-edit\"></i></button>"
                     "<button class=\"btn btn-danger btn-sm\" onclick=\"deleteDevice('{}')\">"
                     "<i class=\"fas fa-trash-alt\"></i></button>"
                     "</td>"
                     "</tr>"
-                ).format(device[0], lan_ip_url, device[1], lan_status_class, device[2], wan_ip_url, device[3], wan_status_class, device[4], device[0], device[0])
+                ).format(device[0], lan_ip_url, device[1], lan_status_class, device[2], wan_ip_url, device[3], wan_status_class, device[4], device[0], device[1], device[3], device[1])
             else:
                 content += (
                     "<tr>"
@@ -298,13 +329,13 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
                     "<td>{}</td>"
                     "<td class=\"{}\">{}</td>"
                     "<td>"
-                    "<button class=\"btn btn-warning btn-sm\" onclick=\"editDevice('{}')\">"
+                    "<button class=\"btn btn-warning btn-sm\" onclick=\"editDevice('{}', '{}', '{}')\">"
                     "<i class=\"fas fa-edit\"></i></button>"
                     "<button class=\"btn btn-danger btn-sm\" onclick=\"deleteDevice('{}')\">"
                     "<i class=\"fas fa-trash-alt\"></i></button>"
                     "</td>"
                     "</tr>"
-                ).format(device[0], lan_ip_url, device[1], lan_status_class, device[2], device[3], wan_status_class, device[4], device[0], device[0])
+                ).format(device[0], lan_ip_url, device[1], lan_status_class, device[2], device[3], wan_status_class, device[4], device[0], device[1], device[3], device[1])
         content += (
             "</tbody>"
             "</table>"
@@ -329,7 +360,7 @@ IP = "192.168.0.151"
 PORT = 8000
 
 # Create a TCP server with SO_REUSEADDR option
-httpd = socketserver.TCPServer((IP, PORT), DashboardHandler)
+httpd = socketserver.ThreadingTCPServer((IP, PORT), DashboardHandler)
 httpd.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
 print("Dashboard server is running at http://{}:{}".format(IP, PORT))
