@@ -95,16 +95,29 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
             # Handle editing an entry
             content_length = int(self.headers['Content-Length'])
             post_data = self.rfile.read(content_length).decode('utf-8')
-            old_device_name, new_device_name, lan_ip, wan_ip = post_data.split(',')
-            new_status_entry = "{}:{},".format(lan_ip, "unknown") + "{}:{},".format(wan_ip, "unknown") + "{}\n".format(new_device_name)
-            new_config_entry = "{},{},{}\n".format(lan_ip, wan_ip, new_device_name)
+            old_lan_ip, new_device_name, new_lan_ip, new_wan_ip = post_data.split(',')
+
+            # Check for IP conflicts
+            with open(CONFIG_FILE, 'r') as file:
+                config_lines = file.readlines()
+            for line in config_lines:
+                lan_ip, wan_ip, _ = line.strip().split(',')
+                if (lan_ip == new_lan_ip and lan_ip != old_lan_ip) or (wan_ip == new_wan_ip and wan_ip != "NA" and new_wan_ip != "NA"):
+                    if (lan_ip == old_lan_ip and lan_ip == new_lan_ip and wan_ip == new_wan_ip):
+                        continue  # Allow changing the device name alone
+                    self.send_response(409)  # Conflict
+                    self.end_headers()
+                    return
+
+            new_status_entry = "{}:{},".format(new_lan_ip, "unknown") + "{}:{},".format(new_wan_ip, "unknown") + "{}\n".format(new_device_name)
+            new_config_entry = "{},{},{}\n".format(new_lan_ip, new_wan_ip, new_device_name)
             
             # Update STATUS_FILE
             with open(STATUS_FILE, 'r') as file:
                 status_lines = file.readlines()
             with open(STATUS_FILE, 'w') as file:
                 for line in status_lines:
-                    if old_device_name in line:
+                    if old_lan_ip in line:
                         file.write(new_status_entry)
                     else:
                         file.write(line)
@@ -114,7 +127,7 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
                 config_lines = file.readlines()
             with open(CONFIG_FILE, 'w') as file:
                 for line in config_lines:
-                    if old_device_name in line:
+                    if old_lan_ip in line:
                         file.write(new_config_entry)
                     else:
                         file.write(line)
@@ -226,15 +239,15 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
             "        alert('Failed to delete device. Check console for details.');"
             "    });"
             "}"
-            "function editDevice(oldDeviceName, lanIp, wanIp) {"
-            "    var deviceDetails = prompt('Enter new details (name,LAN IP,WAN IP):', oldDeviceName + ',' + lanIp + ',' + wanIp);"
+            "function editDevice(oldDeviceName, oldLanIp, oldWanIp) {"
+            "    var deviceDetails = prompt('Enter new details (name,LAN IP,WAN IP):', oldDeviceName + ',' + oldLanIp + ',' + oldWanIp);"
             "    if (deviceDetails === null) return;"  # Cancel pressed
             "    var [newDeviceName, newLanIp, newWanIp] = deviceDetails.split(',');"
             "    if (!newDeviceName || !newLanIp) {"
             "        alert('Device name and LAN IP are required.');"
             "        return;"
             "    }"
-            "    var data = oldDeviceName + ',' + newDeviceName + ',' + newLanIp + ',' + newWanIp;"
+            "    var data = oldLanIp + ',' + newDeviceName + ',' + newLanIp + ',' + newWanIp;"
             "    fetch('/edit', { method: 'POST', body: data })"
             "    .then(response => {"
             "        if (!response.ok) {"
